@@ -15,16 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.wzy.sqltemplate.script.ChooseFragment;
-import org.wzy.sqltemplate.script.ForEachFragment;
-import org.wzy.sqltemplate.script.IfFragment;
-import org.wzy.sqltemplate.script.MixedSqlFragment;
-import org.wzy.sqltemplate.script.OgnlCache;
-import org.wzy.sqltemplate.script.SetFragment;
-import org.wzy.sqltemplate.script.SqlFragment;
-import org.wzy.sqltemplate.script.TextFragment;
-import org.wzy.sqltemplate.script.TrimFragment;
-import org.wzy.sqltemplate.script.WhereFragment;
+import org.wzy.sqltemplate.script.*;
 import org.wzy.sqltemplate.token.GenericTokenParser;
 import org.wzy.sqltemplate.token.TokenHandler;
 import org.xml.sax.EntityResolver;
@@ -176,7 +167,7 @@ public class SqlTemplate {
 
 				public InputSource resolveEntity(String publicId,
 						String systemId) throws SAXException, IOException {
-					return new InputSource(SqlTemplate.class.getResourceAsStream("script-1.0.dtd"));
+					return new InputSource(SqlTemplate.class.getResourceAsStream("/script-1.0.dtd"));
 				}
 			});
 			builder.setErrorHandler(new ErrorHandler() {
@@ -211,6 +202,7 @@ public class SqlTemplate {
 				put("if", new IfHandler());
 				put("choose", new ChooseHandler());
 				put("when", new IfHandler());
+				put("include", new IncludeHandler());
 				put("otherwise", new OtherwiseHandler());
 			}
 		};
@@ -348,6 +340,18 @@ public class SqlTemplate {
 				targetContents.add(mixedSqlFragment);
 			}
 		}
+
+        private class IncludeHandler implements TagHandler {
+            public void handleNode(Node nodeToHandle,
+                                   List<SqlFragment> targetContents) {
+                NamedNodeMap attributes = nodeToHandle.getAttributes();
+                Node refid = attributes.getNamedItem("refid");
+                String content = refid.getTextContent();
+                IncludeFragment fragment = new IncludeFragment(content);
+                targetContents.add(fragment);
+            }
+        }
+
 
 		private class ChooseHandler implements TagHandler {
 			public void handleNode(Node nodeToHandle,

@@ -18,8 +18,19 @@ public class TestTemplate {
 
 		Configuration configuration = new Configuration();
 
+		String include = "  <sql id=\"Base_Column_List\" >\n" +
+				"  admin.*,\n" +
+				"  role.id as role_id,\n" +
+				"  role.name as role_name,\n" +
+				"  role.m_role as role_m_role,\n" +
+				"  role.m_admin as role_m_admin,\n" +
+				"  role.m_user as role_m_user,\n" +
+				"  role.m_examine as role_m_examine\n" +
+				"\n" +
+				"</sql>";
+
 		SqlTemplate template = configuration
-				.getTemplate("select * from user where <if test='id != null ' > id  = #{id} </if>");
+				.getTemplate("select <include refid=\"Base_Column_List\" /> from user where <if test='id != null ' > id  = #{id} </if>");
 
 		HashMap<String, Object> map = new HashMap<String, Object>();
 
