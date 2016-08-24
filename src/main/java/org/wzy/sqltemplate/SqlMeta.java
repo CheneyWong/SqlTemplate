@@ -38,7 +38,7 @@ public class SqlMeta {
 
 	@Override
 	public String toString() {
-		return "SqlInfo [sql=" + sql + ", parameter=" + parameter + "]";
+		return "SqlInfo { sql=" + sql + ", parameter=" + parameter + "}";
 	}
 	
 	
