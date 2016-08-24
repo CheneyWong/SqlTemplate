@@ -1,17 +1,20 @@
 package org.wzy.sqltemplate;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.Charset;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 
+import org.w3c.dom.Node;
 import org.wzy.sqltemplate.script.*;
 import org.wzy.sqltemplate.token.GenericTokenParser;
 import org.wzy.sqltemplate.token.TokenHandler;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Templates;
 
 
 /**
@@ -23,10 +26,13 @@ import org.wzy.sqltemplate.token.TokenHandler;
 public class SqlTemplateKit {
 
 	// 按照 sql.xml 文件页 - id 两层查找
-	private static ConcurrentHashMap<String, HashMap<String, SqlTemplate>> templateCache;
+	private static ConcurrentHashMap<String, HashMap<String, FutureTask<SqlTemplate>>> templateCache
+			= new ConcurrentHashMap<String, HashMap<String, FutureTask<SqlTemplate>>>();
 
 	// 全局配置
 	private static Configuration cfg;
+
+	private static SqlTemplateKit sqlTemplateKit;
 
 
 
@@ -36,49 +42,17 @@ public class SqlTemplateKit {
 	}
 
 
-	/**
-	 *
-	 * @param data
-	 * @return
-	 */
-	public SqlMeta process(Object data) {
-
-		Context context = new Context(cfg, data);
-
-		calculate(context);
-
-		parseParameter(context);
-
-		return new SqlMeta(context.getSql(), context.getParameter());
-	}
-
-	private void parseParameter(final Context context) {
-
-		String sql = context.getSql();
-
-		GenericTokenParser parser1 = new GenericTokenParser("#{", "}",
-				new TokenHandler() {
-
-					public String handleToken(String content) {
-
-						Object value = OgnlCache.getValue(content,
-								context.getBinding());
-
-						if (value == null) {
-							throw new RuntimeException("Can not found "
-									+ content + " value");
-						}
-
-						context.addParameter(value);
-
-						return "?";
-					}
-				});
-
-		sql = parser1.parse(sql);
-
-
-		context.setSql(sql);
+	static SqlTemplateKit getDefIns(){
+		if( null == sqlTemplateKit ){
+			synchronized (SqlTemplateKit.class){
+				if( null == sqlTemplateKit ){
+					Configuration cfg = new Configuration();
+					cfg.setCharset(Charset.forName("UTF-8"));
+					return new SqlTemplateKit(cfg);
+				}
+			}
+		}
+		return sqlTemplateKit;
 
 	}
 
@@ -88,49 +62,32 @@ public class SqlTemplateKit {
 	 * @param xpath eg. club.fullstack.sql#getById
 	 * @return
 	 */
-	public SqlTemplate getTemplate(final String xpath) throws IOException {
+	public SqlTemplate getTemplate(final String xpath) throws IOException, ParserConfigurationException, SAXException {
 
 		SqlTemplatePage xmlPage = SqlTemplatePage.fromXPath(xpath);
 		String sqlId = SqlTemplatePage.sqlId(xpath);
 		String content;
 
-		HashMap<String, SqlTemplate> pageTemp = templateCache.get(xmlPage);
+		// TODO 加锁
+		HashMap<String, FutureTask<SqlTemplate>> pageTemp = templateCache.get(xmlPage.getNamespace());
 		if (null == pageTemp) {
-			content = xmlPage.loadFile();
-			pageTemp = new SqlTemplateEngin(cfg, content).buildAll();
+			pageTemp = xmlPage.buildPage();
 		}
 
-		FutureTask<SqlTemplate> f = pageTemp.get(sqlId);
 
-		if (null == f) {
-			throw new RuntimeException("no thus tmpl");
+		FutureTask<SqlTemplate> ft = pageTemp.get(sqlId);
+
+		if (null == ft) {
+			throw new RuntimeException("no thus tmpl:" + xpath);
 		}
 
-		FutureTask<SqlTemplate> ft = new FutureTask<SqlTemplate>(
-				new Callable<SqlTemplate>() {
-
-					public SqlTemplate call() throws Exception {
-						return createTemplate(content);
-					}
-				});
-
-		f = templateCache.putIfAbsent(content, ft);
-
-		if (f == null) {
-			ft.run();
-			f = ft;
-		}
-
+		ft.run();
 
 		try {
-			return f.get();
+			return ft.get();
 		} catch (Exception e) {
-			templateCache.remove(content);
 			throw new RuntimeException(e);
 		}
-
-		return createTemplate(content);
-
 	}
 
 
@@ -138,8 +95,13 @@ public class SqlTemplateKit {
 		// 命名空间 对应于 xml
 		private String namespace = "/";
 
-		// xml 文件
-		private SqlFragment root;
+		// 一级子元素列表
+		private HashMap<String,Node> nodelist;
+
+		// xml 解析器
+		private SqlTemplateEngin engin = new SqlTemplateEngin(cfg,this);
+
+
 
 		/**
 		 * 从 xpath 解析到 SqlTemplatePage
@@ -179,9 +141,8 @@ public class SqlTemplateKit {
 		public String loadFile() throws IOException {
 
 			String content;
-			content = readerContent(this.getClass().getResourceAsStream(
-					cfg.getMapperPath() + getNamespace()
-			));
+			String fileName = cfg.getMapperPath() + getNamespace() + ".xml";
+			content = readerContent(this.getClass().getResourceAsStream(fileName));
 
 			return content;
 		}
@@ -204,6 +165,34 @@ public class SqlTemplateKit {
 			bufferedReader.close();
 
 			return sb.toString();
+		}
+
+		public HashMap<String,FutureTask<SqlTemplate>> buildPage() throws IOException, ParserConfigurationException, SAXException {
+			String content = this.loadFile();
+			HashMap<String,FutureTask<SqlTemplate>> ret = new HashMap<String,FutureTask<SqlTemplate>>();
+			nodelist = engin.buildPage(content);
+			final SqlTemplatePage self = this;
+			Iterator it = nodelist.entrySet().iterator();
+			while (it.hasNext()) {
+				Map.Entry entry = (Map.Entry) it.next();
+				String key = (String)entry.getKey();
+				final Node node = (Node)entry.getValue();
+				FutureTask<SqlTemplate> ft = new FutureTask<SqlTemplate>(
+					new Callable<SqlTemplate>() {
+						public SqlTemplate call() throws Exception {
+							return engin.buildSQLTempl(node);
+						}
+					});
+				ret.put(key,ft);
+			}
+
+			templateCache.put(this.getNamespace(),ret);
+			return ret;
+		}
+
+
+		public Node getChildNode(String id){
+			return nodelist.get(id);
 		}
 
 		public String getNamespace() {

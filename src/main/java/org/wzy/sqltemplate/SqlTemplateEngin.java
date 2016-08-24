@@ -31,30 +31,58 @@ import java.util.Map;
 class SqlTemplateEngin {
 
     private Configuration cfg;
-    private String templateContent;
+    private SqlTemplateKit.SqlTemplatePage sqlPage;
 
-
-    public SqlTemplateEngin(Configuration cfg, String templateContent) {
-        super();
+    public SqlTemplateEngin(Configuration cfg, SqlTemplateKit.SqlTemplatePage sqlPage) {
         this.cfg = cfg;
-        this.templateContent = templateContent;
+        this.sqlPage = sqlPage;
     }
 
-    public SqlTemplate build() {
+    /**
+     * 解析 mapper 的第一层目录
+     * @return
+     */
+    public HashMap<String,Node> buildPage(String templateContent) throws IOException, SAXException, ParserConfigurationException {
+        Document root = buildXml(templateContent);
+        NodeList list = root.getElementsByTagName("mapper");
+        Node mapper = list.item(0);
+        NodeList children = mapper.getChildNodes();
 
-        Document document = null;
-        try {
-            document = buildXml(templateContent);
-        } catch (Exception e) {
-            throw new RuntimeException("Error constructing the XML object");
+        HashMap<String,Node> ret = new HashMap<String,Node>();
+
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+
+            if( Node.ELEMENT_NODE == child.getNodeType() ){
+                NamedNodeMap attributes = child.getAttributes();
+                Node attrId = attributes
+                        .getNamedItem("id");
+
+                String id = attrId.getTextContent();
+                ret.put(id,child);
+            }
         }
+        return ret;
+    }
 
-        List<SqlFragment> contents = buildDynamicTag(document.getElementsByTagName("script").item(0));
 
-        return new SqlTemplate(new MixedSqlFragment(contents), cfg);
+    /**
+     * 解析 sql 条目
+     * @return
+     */
+    public SqlTemplate buildSQLTempl(Node node) {
+
+        List<SqlFragment> contents = buildDynamicTag(node);
+
+        return new SqlTemplate(cfg,new MixedSqlFragment(contents));
 
     }
 
+    /**
+     * 解析动态标签
+     * @param node
+     * @return
+     */
     private List<SqlFragment> buildDynamicTag(Node node) {
 
         List<SqlFragment> contents = new ArrayList<SqlFragment>();
@@ -106,7 +134,9 @@ class SqlTemplateEngin {
 
             public InputSource resolveEntity(String publicId,
                                              String systemId) throws SAXException, IOException {
-                return new InputSource(SqlTemplate.class.getResourceAsStream("/script-1.0.dtd"));
+                System.out.println("publicId :" + publicId);
+                System.out.println("systemId :" + systemId);
+                return new InputSource(SqlTemplate.class.getResourceAsStream("/mybatis-3-mapper.dtd"));
             }
         });
         builder.setErrorHandler(new ErrorHandler() {
@@ -125,7 +155,7 @@ class SqlTemplateEngin {
             }
         });
 
-        InputSource inputSource = new InputSource(new StringReader(String.format("<?xml version = \"1.0\" ?>\r\n<!DOCTYPE script SYSTEM \"script-1.0.dtd\">\r\n<script>%s</script>", templateContent)));
+        InputSource inputSource = new InputSource(new StringReader(templateContent));
 
         return builder.parse(inputSource);
     }
@@ -284,8 +314,11 @@ class SqlTemplateEngin {
         public void handleNode(Node nodeToHandle,
                                List<SqlFragment> targetContents) {
             NamedNodeMap attributes = nodeToHandle.getAttributes();
-            Node refid = attributes.getNamedItem("refid");
-            String content = refid.getTextContent();
+            Node refidN = attributes.getNamedItem("refid");
+            String refid = refidN.getTextContent();
+            // 从本页已解析的标签中载入内容
+            Node node = sqlPage.getChildNode(refid);
+            String content = node.getTextContent();
             IncludeFragment fragment = new IncludeFragment(content);
             targetContents.add(fragment);
         }
