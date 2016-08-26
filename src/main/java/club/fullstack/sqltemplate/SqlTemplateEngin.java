@@ -1,6 +1,6 @@
-package org.wzy.sqltemplate;
+package club.fullstack.sqltemplate;
 
-import org.wzy.sqltemplate.script.SqlFragment;
+import club.fullstack.sqltemplate.script.*;
 
 /**
  * Created by Cheney on 2016/8/23.
@@ -10,9 +10,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.wzy.sqltemplate.Configuration;
-import org.wzy.sqltemplate.SqlTemplate;
-import org.wzy.sqltemplate.script.*;
 import org.xml.sax.*;
 
 import javax.xml.parsers.DocumentBuilder;

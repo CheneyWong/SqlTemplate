@@ -1,6 +1,6 @@
-package org.wzy.sqltemplate.script;
+package club.fullstack.sqltemplate.script;
 
-import org.wzy.sqltemplate.Context;
+import club.fullstack.sqltemplate.Context;
 
 /**
  * Created by Cheney on 2016/8/23.

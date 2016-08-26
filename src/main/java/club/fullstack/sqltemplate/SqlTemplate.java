@@ -1,9 +1,9 @@
-package org.wzy.sqltemplate;
+package club.fullstack.sqltemplate;
 
-import org.wzy.sqltemplate.script.OgnlCache;
-import org.wzy.sqltemplate.script.SqlFragment;
-import org.wzy.sqltemplate.token.GenericTokenParser;
-import org.wzy.sqltemplate.token.TokenHandler;
+import club.fullstack.sqltemplate.script.OgnlCache;
+import club.fullstack.sqltemplate.script.SqlFragment;
+import club.fullstack.sqltemplate.token.GenericTokenParser;
+import club.fullstack.sqltemplate.token.TokenHandler;
 
 /**
  * 

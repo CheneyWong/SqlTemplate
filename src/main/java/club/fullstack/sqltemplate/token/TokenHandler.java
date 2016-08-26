@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate.token;
+package club.fullstack.sqltemplate.token;
 
 
 /**

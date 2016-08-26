@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate.script;
+package club.fullstack.sqltemplate.script;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;

@@ -1,10 +1,10 @@
-package org.wzy.sqltemplate.script;
+package club.fullstack.sqltemplate.script;
 
 import java.util.Map;
 
-import org.wzy.sqltemplate.Context;
-import org.wzy.sqltemplate.token.GenericTokenParser;
-import org.wzy.sqltemplate.token.TokenHandler;
+import club.fullstack.sqltemplate.Context;
+import club.fullstack.sqltemplate.token.GenericTokenParser;
+import club.fullstack.sqltemplate.token.TokenHandler;
 
 public class ForEachFragment implements SqlFragment {
 

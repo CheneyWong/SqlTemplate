@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate;
+package club.fullstack.sqltemplate;
 
 import java.util.ArrayList;
 import java.util.HashMap;

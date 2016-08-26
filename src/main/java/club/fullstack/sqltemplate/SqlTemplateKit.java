@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate;
+package club.fullstack.sqltemplate;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -8,13 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 
 import org.w3c.dom.Node;
-import org.wzy.sqltemplate.script.*;
-import org.wzy.sqltemplate.token.GenericTokenParser;
-import org.wzy.sqltemplate.token.TokenHandler;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Templates;
 
 
 /**
@@ -42,7 +38,7 @@ public class SqlTemplateKit {
 	}
 
 
-	static SqlTemplateKit getDefIns(){
+	public static SqlTemplateKit getDefIns(){
 		if( null == sqlTemplateKit ){
 			synchronized (SqlTemplateKit.class){
 				if( null == sqlTemplateKit ){
@@ -66,6 +62,24 @@ public class SqlTemplateKit {
 
 		SqlTemplatePage xmlPage = SqlTemplatePage.fromXPath(xpath);
 		String sqlId = SqlTemplatePage.sqlId(xpath);
+		return getTemplate(xmlPage,sqlId);
+	}
+
+	/**
+	 * 获取指定的 sql
+	 * @return
+	 */
+	public SqlTemplate getTemplate(final String xmlPath,final String sqlId) throws IOException, ParserConfigurationException, SAXException {
+		SqlTemplatePage xmlPage = SqlTemplatePage.fromXPath(xmlPath);
+		return getTemplate(xmlPage,sqlId);
+	}
+
+	/**
+	 * 获取指定的 sql
+	 * @return
+	 */
+	public SqlTemplate getTemplate(final SqlTemplatePage xmlPage,final String sqlId) throws IOException, ParserConfigurationException, SAXException {
+
 		String content;
 
 		// TODO 加锁
@@ -78,7 +92,7 @@ public class SqlTemplateKit {
 		FutureTask<SqlTemplate> ft = pageTemp.get(sqlId);
 
 		if (null == ft) {
-			throw new RuntimeException("no thus tmpl:" + xpath);
+			throw new RuntimeException("no thus tmpl:" + xmlPage.getNamespace() + "#" + sqlId);
 		}
 
 		ft.run();

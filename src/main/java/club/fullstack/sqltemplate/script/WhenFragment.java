@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate.script;
+package club.fullstack.sqltemplate.script;
 
 /**
  * 

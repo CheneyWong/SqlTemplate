@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate.script;
+package club.fullstack.sqltemplate.script;
 
 import java.io.StringReader;
 import java.util.Map;

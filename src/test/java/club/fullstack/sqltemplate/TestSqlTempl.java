@@ -1,4 +1,4 @@
-package org.wzy.sqltemplate;
+package club.fullstack.sqltemplate;
 
 import org.junit.Test;
 import org.xml.sax.SAXException;
