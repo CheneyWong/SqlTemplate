@@ -61,15 +61,15 @@ public class SqlMeta {
 	@Override
 	public String toString() {
 
-		String debugSql = sql;
+/*		String debugSql = sql;
 		for (Object obj : parameter){
 			debugSql = debugSql.replaceFirst("\\?",obj.toString());
-		}
+		}*/
 
 		return "SqlMeta { \r\n" +
 				"\tsql=" + sql + "\r\n" +
 				"\tparams=" + parameter + "\r\n" +
-				"\tdebug_sql=" + debugSql + "\r\n" +
+				/*"\tdebug_sql=" + debugSql + "\r\n" +*/
 				"}";
 	}
 	
