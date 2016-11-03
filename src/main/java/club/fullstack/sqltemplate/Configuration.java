@@ -11,7 +11,6 @@ public class Configuration {
 
 	private transient boolean cacheTemplate;
 
-	private String  mapperPath = "/";
 
 	private Charset charset;
 
@@ -24,15 +23,6 @@ public class Configuration {
 
 		this.cacheTemplate = cacheTemplate;
 		this.charset = charset;
-	}
-
-
-	public String getMapperPath() {
-		return mapperPath;
-	}
-
-	public void setMapperPath(String mapperPath) {
-		this.mapperPath = mapperPath;
 	}
 
 	public boolean isCacheTemplate() {

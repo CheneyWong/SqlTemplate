@@ -130,6 +130,9 @@ public class SqlTemplateKit {
 			}else{
 				namespace = xpath;
 			}
+			if (! namespace.startsWith("/")){
+				namespace = "/" + namespace;
+			}
 			return new SqlTemplatePage(namespace);
 		}
 
@@ -155,8 +158,14 @@ public class SqlTemplateKit {
 		public String loadFile() throws IOException {
 
 			String content;
-			String fileName = cfg.getMapperPath() + getNamespace() + ".xml";
-			content = readerContent(this.getClass().getResourceAsStream(fileName));
+			String fileName = getNamespace() + ".xml";
+			InputStream in = this.getClass().getResourceAsStream(fileName);
+			if (null == in ){
+				String classpath =  this.getClass().getResource("/").getPath();
+
+				throw new RuntimeException("cannot find file :" + classpath + fileName);
+			}
+			content = readerContent(in);
 
 			return content;
 		}
@@ -174,6 +183,7 @@ public class SqlTemplateKit {
 
 			while ((line = bufferedReader.readLine()) != null) {
 				sb.append(line);
+				sb.append(" ");
 			}
 
 			bufferedReader.close();
